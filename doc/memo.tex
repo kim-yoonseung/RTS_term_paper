@@ -1,0 +1,686 @@
+%-----------------------------------------------------------------------------
+%
+%               Template for sigplanconf LaTeX Class
+%
+% Name:         sigplanconf-template.tex
+%
+% Purpose:      A template for sigplanconf.cls, which is a LaTeX 2e class
+%               file for SIGPLAN conference proceedings.
+%
+% Guide:        Refer to "Author's Guide to the ACM SIGPLAN Class,"
+%               sigplanconf-guide.pdf
+%
+% Author:       Paul C. Anagnostopoulos
+%               Windfall Software
+%               978 371-2316
+%               paul@windfall.com
+%
+% Created:      15 February 2005
+%
+%-----------------------------------------------------------------------------
+
+
+\documentclass[nocopyrightspace]{sigplanconf}
+
+% The following \documentclass options may be useful:
+
+% preprint      Remove this option only once the paper is in final form.
+% 10pt          To set in 10-point type instead of 9-point.
+% 11pt          To set in 11-point type instead of 9-point.
+% authoryear    To obtain author/year citation style instead of numeric.
+
+\usepackage{amsmath}
+\usepackage{float}
+
+
+\begin{document}
+
+\special{papersize=8.5in,11in}
+\setlength{\pdfpageheight}{\paperheight}
+\setlength{\pdfpagewidth}{\paperwidth}
+
+\conferenceinfo{CONF 'yy}{Month d--d, 20yy, City, ST, Country} 
+\copyrightyear{20yy} 
+\copyrightdata{978-1-nnnn-nnnn-n/yy/mm} 
+\doi{nnnnnnn.nnnnnnn}
+
+% Uncomment one of the following two, if you are not going for the 
+% traditional copyright transfer agreement.
+
+%\exclusivelicense                % ACM gets exclusive license to publish, 
+                                  % you retain copyright
+
+%\permissiontopublish             % ACM gets nonexclusive license to publish
+                                  % (paid open-access papers, 
+                                  % short abstracts)
+
+\titlebanner{banner above paper title}        % These are ignored unless
+\preprintfooter{short description of paper}   % 'preprint' option specified.
+
+\title{ Formal Model of Fixed-Priority Scheduling }
+\subtitle{ Real Time Systems, Spring 2016, SNU}
+
+\authorinfo{ Kim Yoonseung }
+           {Seoul National University}
+           {yoonseung.kim@sf.snu.ac.kr}
+
+\maketitle
+
+\begin{abstract}
+We present a formal model of the fixed-priority real-time systems. We define the task model
+and the execution process in a formal way, and we also provide some useful library of proofs. We also show
+a possible way to use this for more complex purpose, such as proving optimality of RM.
+Our supplementary materials are shown at https://github.com/kim-yoonseung/RTS\_term\_paper.
+
+\end{abstract}
+
+\section{Introduction}
+
+The soundness and reliability of job scheduling algorithms in real-time systems is a greatly desired property. Fundamentally, the most important concern in real-time systems is to guarantee to meet the deadline of each job by using an appropriate scheduling algorithms that controls the execution of jobs.
+
+Among the bunch of various scheduling algorithms, the fixed-priority scheduling is widely used in the real-world applications. In contrast to dynamic scheduling, it provides simpler implementation, more predictablility, and easier ways to handling deadline misses. Also, the simple, rate-monotonic algorithm is already known to be the optimal among them.
+
+Meanwhile, the formal verification methods are going more closer to the real use. The formal methods provides the most strongest credibility for proving the correctness of a system. The formal proofs for real world systems had been regarded as almost intractable, and even just bothersome, since it required a lot of human efforts and the gain seemed to be small. However, current machine-checked proof assistant softwares such as Coq(\cite{coq}) are greatly improved, and several realistic formally-proved systems are already introduced(\cite{leroy2009formal}).
+
+Especially, the real-time systems field seems to be very promising as an application of the formal verification methods. Many real-time systems handle very important and sometimes vital tasks. The predictability of the behavior of the system is one of the desirable property of a real-time system. The formal methods can provide the evidence of that a system satisfies its specification, with very high confidence.
+
+In this paper, we formally model the fixed-priority scheduling of real-time systems as the start of applying the formal methods to the real-time systems. We also support some proofs related to the system, which can be used to prove any specification this system should satisfy, such as schedulability.
+
+\section{Backgrounds}
+
+In this section, we introduce the two topics related to this work: the fixed-priority scheduling and the formal method.
+
+\subsection{Fixed-Priority Scheduling}
+
+The priority-driven scheduling algorithms are popularly used in real-time systems. They are classified as an online scheduling since the actual schedule is determined on-line by examining the current status.
+
+The fixed-priority scheduling and the dynamic-priority scheduing are the two parts that consist of the priority-driven scheduling. The dynamic-priority scheduling outperforms the fixed-priority in general. However, the fixed-priority scheduling is still widely used in real world since it is simpler and more predictable.
+
+\paragraph{Rate-monotonic} Among the fixed-priority scheduling algorithms, the algorithm called rate-monotonic(RM) is known to be optimal. The scheduling rule is simple: tasks with shorter period get higher priorities. Here the optimality implies that this algorithm can successfully schedule any tasks if it can be scheduled by any other fixed-priority schedulers. The optimality of RM is proven in earlier\cite{liu1973scheduling}. Giving a formal proof for RM itself is not very important or surprising. However, formally proving RM can be served as a test for applying the formal method to the real-time systems. Also, the works done in this job can be reused for more complicated algorithms later.
+
+\subsection{Formal Methods}
+
+In present, formal proofs are usually done with machine-checked theorem prover[]. They are also called proof assistants. The products with formal proofs provides the greatest reliability for users, since the proof is checked by machine.
+
+\paragraph{Coq}
+The Coq proof assistant\cite{coq} is the most widely used theorem prover. Coq is equipped with strong mathematical theories so we can strongly believe the results. Also this prover supports both usual programming in ML-style and mathematical theorem proving, so that programmers can write a program, write its specification in precise mathematical formulas, and then prove the property at the same time. The most representative product is CompCert\cite{leroy2009formal}, a verified real-world C compiler.
+
+\paragraph{CompCert}
+The CompCert compiler clearly shows the importance of the formal methods. Until now, compiler writers had been writing the compiler code relying on their intuition. However, it turned out that current compilers contain many bugs\cite{yang2011finding}. By testing many bugs are fixed during the developing stages, but still wrong compilation occurs in real world.
+
+
+\section{Formal Model of Workloads}
+
+Here we present our way of modeling the workload model: tasks and jobs. We defined their formal structure and desirable properties for them. The works described here can be found in \texttt{def.v} of the supplementari materials.
+
+\subsection{Tasks}
+
+A task is modeled as a tuple of \texttt{(task\_id, start, period, exec\_time)}. \texttt{task\_id} is supposed to be unique among the task set to which the task is belong. \texttt{start} is the start time of the task, or \texttt{phase} in other word. \texttt{period} and \texttt{exec\_time} means as expected. We suppose that relative deadlines are equal to the periods for simplicity.
+
+This is the actual definition in the Coq syntax:
+
+\begin{figure}[H]
+  \[
+  \begin{array}{l}
+    \texttt{Record task : Set :=} \\
+    \texttt{Task \{ task\_id:nat; start:nat; } \\
+    \texttt{{~~~~}period:nat; exec\_time:nat \}. }\\
+  \end{array}
+  \]
+  \caption{ Definition of tasks in Coq }\label{fig:task}
+
+\end{figure}
+
+\texttt{Record} means this structure is a tuple. \texttt{nat} is the type of natural numbers. For example, \texttt{task\_id:nat} means that the task-id is a natural number.
+
+\subsection{Jobs}
+
+A job is composed of a tuple \texttt{(release\_time, deadline, job\_task\_id, time\_left)}. The first two value represent the absolute release time and deadline. \texttt{job\_task\_id} is the task-id of the job. \texttt{time\_left} shows the remaining time to complete the job's execution. When \texttt{time\_left} becomes 0 before the deadline, the job is successfully completed.
+
+Again we show the actual definition of jobs in the Coq syntax:
+
+\begin{figure}[H]
+  \[
+  \begin{array}{l}
+    \texttt{Record job : Set :=} \\
+    \texttt{Job \{ release\_time:nat; deadline:nat; } \\
+    \texttt{{~~~~}job\_task\_id:nat; time\_left:nat \}. }\\
+  \end{array}
+  \]
+  \caption{ Definition of jobs in Coq }\label{fig:job}
+
+\end{figure}
+
+\subsection{Properties}
+
+We also define several desirable properties of a task set. A set of task in a real-time system is simply modeled as a list of tasks.
+\[ \texttt{Definition taskset := list task.} \]
+The order of tasks in the list indicates the priority. The leftmost (head) task has the highest priority over other tasks.
+
+\subsubsection{\texttt{valid\_tset}}
+We want a taskset to have some good properties. Here we define the condition for a taskset to be valid. First, we want that task-ids are unique in the taskset. Also, we added another property that there is no duplicate tasks in the list. In fact, the uniqueness of task-id implies this, but we explicitly use this for simplicity. Here is the actual Coq code which is quite intuitive.
+\[
+\begin{array}{l}
+  \texttt{Definition valid\_tset (tset:taskset) : Prop :=} \\
+  \texttt{tset\_unique\_id tset $\wedge$ NoDup tset.}
+\end{array}
+\]
+
+The detail definition of \texttt{tset\_unique\_id} is shown in the supplementary material, and \texttt{NoDup} is supported by the standard Coq library.
+
+\subsubsection{\texttt{valid\_queue}}
+We also desire a property for a job queue. We assume that all jobs in the queue are sorted in the priority order. Like tasks, we defined a property \texttt{valid\_queue} for a job queue.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Inductive valid_queue (tset:taskset) : queue -> Prop :=
+  | Q_empty: valid_queue tset []
+  | Q_one : forall j (n:nat),
+      priority_of_tid j.(job_task_id) tset = Some n ->
+      valid_queue tset [j]
+  | Q_many : forall j1 j2 jq n1 n2,
+      priority_of_tid j1.(job_task_id) tset = Some n1 ->
+      priority_of_tid j2.(job_task_id) tset = Some n2 ->
+      n1 < n2 ->
+      valid_queue tset (j2::jq) ->
+      valid_queue tset (j1::j2::jq).
+\end{verbatim}
+\caption{ Definition of \texttt{valid\_queue} }\label{fig:valid_queue}
+
+In the code above, \texttt{priority\_of\_tid (job) (taskset)} returns the priority of the job.
+This looks complicated, but if you carefully examine, you must realize that this just implies the sorted order of the queue.
+
+\end{figure}
+
+\subsection{Taskset Generator}
+We provide a taskset generator which is simple to use. Randomly-made taskset may violate the validity condition \texttt{valid\_tset} by assigning same task-id to multiple tasks. Our task generator automatically assign the task-id when adding a new task. This generator also automatically generates the proof that the generated taskset satisfies the \texttt{valid\_tset} condition so that we can use this proof in further proofs. See the \texttt{TASK\_GEN} section of \texttt{def.v}
+
+
+\section{Formal Model of Execution}
+
+Here we describe how we formally model the execution procedure. These are defined in \texttt{exec.v}.
+
+\subsection{State}
+
+We model the execution of a system as a sequence of transitions of states. Each state is a tuple of
+\texttt{(taskset, current\_time, job\_queue, list\_of\_failed\_jobs)}. The first three parts are intuitively
+understandable. The \texttt{fail\_list} part stores the list of jobs that missed the deadline from the start.
+Here we assume that the execution just throws away the missed jobs.
+
+\begin{figure}[H]
+\begin{verbatim}
+Record state : Set :=
+  State { st_tset: taskset;
+          time:nat;
+          job_q:queue;
+          fail_list: queue
+        }.
+\end{verbatim}
+\caption{ Definition of \texttt{state} }\label{fig:state}
+\end{figure}
+
+The initial state for a taskset is simply the state with time 0, the empty job queue, and the empty fail list.
+\begin{verbatim}
+Definition init_state (tset:taskset): state :=
+    State tset 0 nil nil.
+\end{verbatim}
+
+\subsection{One-step Execution}
+We assume that the execution proceeds with discrete time sequence, for simplicity. Therefore the whole execution consists of
+the sequence of successive steps. Here is the formal model of the one-step execution. As we mentioned, each step is a
+transition from a state to another state.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Definition execute_one (cur:state) : state :=
+    match cur with
+    | State tset time jq fl =>
+      let jq_at_start := add_new_jobs tset time jq in
+      let jq_at_end :=
+          match jq_at_start with
+          | [] => []
+          | job::rest =>
+            let new_time_left := job.(time_left) - 1 in
+            if (Nat.eqb new_time_left 0)
+            then rest
+            else (Job job.(release_time) job.(deadline)
+                  job.(job_task_id) new_time_left)::rest
+          end
+      in
+      let (lives, fails) :=
+           filter_fails jq_at_end (1 + time) in
+      State tset (1+time) lives fails
+    end.
+\end{verbatim}
+\caption{ Definition of one-step execution }\label{fig:one-step}
+\end{figure}
+
+Each step starts with adding new jobs. We calculate newly-released jobs from the taskset from the \texttt{add\_new\_jobs} function. Then \texttt{jq\_at\_start} is the sorted job queue that the execution is going to process. Now it just checks the queue and process the job at the head of the queue. Our model simply subtract one time unit from the head job's \texttt{time\_left} field. If the time left for the job is 0, we can remove the job from the queue. After the processing, we check the queue to filter jobs who fail to meet the deadline.
+
+\subsection{N-step Execution}
+
+Now we can easily design the n-step execution. If $n=0$, we execute zero step, i.e. return the initial state. Otherwise, just repeat the one-time execution n times.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Fixpoint execute_n (cur_state:state) (n:nat)
+      : state :=
+    match n with
+    | O => cur_state
+    | S n' => execute_n (execute_one cur_state) n'
+    end.
+\end{verbatim}
+\caption{ Definition of n-step execution }\label{fig:n-step}
+\end{figure}
+
+\subsection{Assigning Priority}
+As we mentioned, the priority of tasks is represented as the order of tasks in the \texttt{taskset} list. Therefore we can model the priority assignment as reordering the given \texttt{taskset}. We define the type of the priority assigner in a general way: functions from \texttt{taskset} to \texttt{taskset}, and then give a constraint to be a valid priority assigner.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Definition priority_assigner : Type :=
+    taskset -> taskset.
+
+  Definition valid_priority_assigner
+             (pr:priority_assigner) : Prop :=
+    forall (tset:taskset) (t:task),
+      valid_tset tset ->
+      (In t tset <-> In t (pr tset)) /\
+      valid_tset (pr tset).
+\end{verbatim}
+\caption{ Priority assigner as reordering function }\label{fig:pa}
+\end{figure}
+
+The constraint is intuitive: if a priority assigner \texttt{pr} is valid, then it preserves the validity of the given task set and the elements of the task set.
+
+\subsection{Running a taskset from initial}
+
+Now we can define the top-level execution model. An execution requires a priority assigner, taskset, and the time bound. Its
+job is simple: just sort the task set according the priority and execute n steps from the initial state.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Definition run (pr:priority_assigner)
+                 (tset:taskset) (n:nat)
+       : state :=
+    let sorted_tset := pr tset in
+    execute_n (init_state sorted_tset) n.
+\end{verbatim}
+\caption{ \texttt{run}: Toplevel execution model }\label{fig:run}
+\end{figure}
+
+Now we can define the `schedulability' condition. We say a task set is schedulable with the given priority,
+if for any unbound length of executions, the resulting state doesn't have any failed jobs.
+
+\begin{figure}[H]
+\begin{verbatim}
+  Definition schedulable (pr:priority_assigner)
+                         (tset: taskset) :=
+    forall n:nat, exists final_state,
+        run pr tset n = final_state /\
+        final_state.(fail_list) = nil.
+\end{verbatim}
+\caption{ Schedulability condition }\label{fig:schedulable}
+\end{figure}
+
+\section{More Formal Proofs Supported as Libraries}
+
+In addition to the modeling of execution behaviors, we provide useful proofs as a library for the further complex reasoning. Here we introduce some of the interesting theorems. Many of them seem to be obvious, but they are necessary to give formal proofs for further complex propositions, such as the optimality of RM. You can check the whole result from \texttt{priority\_proof.v} and \texttt{exec\_proof.v} in the supplementary materials.
+
+\subsection{Proofs for Priorities}
+
+\subsubsection{\texttt{existent-task-priority}}
+
+We prove that, every task in the task set is given a priority.
+
+\begin{verbatim}
+Lemma existent_task_priority:
+  forall (t:task) (tset:taskset),
+  In t tset -> exists (n:nat),
+    priority_of_tid t.(task_id) tset = Some n.
+\end{verbatim}
+
+
+\subsubsection{\texttt{priority-tid-unique}}
+
+In a valid task set, the priorities of two task-ids are identical, then the ids are the same.
+
+\begin{verbatim}
+Lemma priority_tid_unique:
+  forall (tid1 tid2:nat) (tset:taskset) (n:nat),
+    valid_tset tset ->
+    priority_of_tid tid1 tset = Some n ->
+    priority_of_tid tid2 tset = Some n ->
+    tid1 = tid2.
+\end{verbatim}
+
+\subsubsection{\texttt{priority-unique}}
+
+Also, in a valid task set, if two tasks' priorities are identical, then the tasks themselves are the same.
+
+\begin{verbatim}
+Lemma priority_unique:
+  forall (t1 t2:task) (tset:taskset) (n:nat),
+    valid_tset tset ->
+    In t1 tset -> In t2 tset ->
+    priority_of_tid t1.(task_id) tset = Some n ->
+    priority_of_tid t2.(task_id) tset = Some n ->
+    t1 = t2.
+\end{verbatim}
+
+\subsection{Proofs for Execution}
+
+\subsubsection{\texttt{get-text-nth-of-task-spec}}
+
+Internally, for each time step and for each task, we determine whether it's the time to release a job
+from the task. This theorem proves that if our internal function \texttt{get\_next\_nth\_of\_task}
+says that this is the time to release the n-th job of the task, then it really is.
+
+\begin{verbatim}
+Theorem get_next_nth_of_task_spec:
+  forall (t:task) (time:nat) (nth:nat),
+    get_next_nth_of_task t time = Some nth ->
+    (nth_job_of_task t nth).(release_time) = time.
+\end{verbatim}
+
+
+\subsubsection{\texttt{add-job-to-queue-preserve-valid-queue}}
+
+As we saw earlier, each one-step execution first adds newly-generated jobs. We prove here that
+for a valid task set, if the generated job is from the task set and original queue is valid,
+and if there is no other job from the same task, then the queue after inserting the generated job
+is still valid.
+
+\begin{verbatim}
+Lemma add_job_to_queue_preserve_valid_queue:
+  forall (tset:taskset) (j:job) (q:queue),
+    valid_tset tset ->
+    (exists n,
+       priority_of_tid j.(job_task_id) tset
+        = Some n) ->
+    valid_queue tset q ->
+    (forall j', In j' q ->
+       j'.(job_task_id) <> j.(job_task_id)) ->
+    valid_queue tset (add_job_to_queue tset j q).
+\end{verbatim}
+
+
+\subsubsection{\texttt{filter-fails-spec}}
+
+After the one-step execution, we filter the failed jobs. This theorem proves that the filtered jobs
+really miss their deadlines.
+
+\begin{verbatim}
+Lemma filter_fails_spec:
+  forall q qt qf time,
+    filter_fails q time = (qt, qf) ->
+    (forall j:job, (In j qt)
+       -> (time < j.(deadline))) /\
+    (forall j:job, (In j qf)
+       -> (j.(deadline) <= time)).
+\end{verbatim}
+
+\section{Further Try: Formal Proof of Optimality of RM}
+
+The formal models of execution and the proof libraries can be utilized to prove more complex and useful theorems.
+We provide a template to prove the optimality of RM. This proof has several holes so incomplete. However,
+with some efforts, one can fill the hole to complete the whole proof of the optimality of RM.
+Here we describe the template, defined in \texttt{rm\_swap.v} and \texttt{rm\_optimal.v}.
+
+\subsection{Swap}
+
+The main constructor of the optimality proof is the swapping operation. For any schedulable executions, we perform
+swapping until it becomes the RM schedule. Then we should prove that the swapped schedule is still schedulable.
+
+The swapping is represented here as a higher-order function for priority assigners. In the previous section we saw
+that a priority assigner is modeled as a task-set-reordering function. Then, swapping can be modeled as swapping one
+adjacent pair of tasks in the task set after running the original priority assigner. Here, swapping is done only when
+it found a pair whose priorities are inverted according to their periods. Formally, we define swap by combining the two
+functions below.
+
+\begin{figure}[H]
+\begin{verbatim}
+Fixpoint swap_taskset (tset:taskset) : taskset :=
+  match tset with
+  | [] => []
+  | h1::t1 =>
+    match t1 with
+    | [] => [h1]
+    | h2::t2 =>
+      if (Nat.ltb h2.(period) h1.(period))
+      then
+        h2::h1::t2
+      else
+        h1::(swap_taskset t1)
+    end
+  end.
+
+Definition swap_priority_assigner (pr:priority_assigner)
+  : priority_assigner :=
+  fun (tset:taskset) => swap_taskset (pr tset).
+\end{verbatim}
+\caption{ Modeling swap }\label{fig:swap}
+\end{figure}
+
+Here, \texttt{swap\_taskset} gets an input of a task set. Then, it checks
+the task set from the beginning whether there is an inverted pair or not.
+If it finds such pair, it swaps them and return the task set.
+
+Then, \texttt{swap\_priority\_assigner} gets a priority assigner and then
+returns another priority assigner, which is almost same as the input assigner,
+but one inverted pair of tasks are swapped.
+
+We present a formally-proven property of this swap model below:
+
+\begin{figure}[H]
+\begin{verbatim}
+Definition tset_swapped
+           (tset1 tset2:taskset) (task1 task2:task):=
+  exists (tl_bef tl_aft:taskset),
+    (tset1 = tl_bef ++ [task1; task2] ++ tl_aft) /\
+    (tset2 = tl_bef ++ [task2; task1] ++ tl_aft) /\
+    task2.(period) < task1.(period).
+
+Lemma swap_spec:
+  forall (pr:priority_assigner)
+         (tset0 tset1 tset2:taskset),
+    tset1 = pr tset0 ->
+    tset2 = (swap_priority_assigner pr) tset0 ->
+    (sorted tset1 /\ tset2 = tset1) \/
+    exists (task1 task2:task),
+      tset_swapped tset1 tset2 task1 task2.
+\end{verbatim}
+\caption{ Specification of swap }\label{fig:swap-spec}
+\end{figure}
+
+This property guarantees that, the two task sets - one sorted by the original
+priority assigner, and another sorted by swapped priority - are identical except
+only one swapped pair.
+
+\subsection{Optimality Proof}
+
+Here we present the proof of RM's optimality with some holes.
+
+\subsubsection{Rate-monotonic}
+We first formally define the RM property. A priority assignment is RM for the given task when
+for any pair of tasks, the task with shorter period gets the higher priority.
+
+\begin{figure}[H]
+\begin{verbatim}
+Definition rate_monotonic (pr:priority_assigner)
+                          (tset:taskset) : Prop :=
+forall (t1 t2:task) (n1 n2:nat) (new_tset:taskset),
+  new_tset = pr tset -> 
+  In t1 new_tset ->
+  In t2 new_tset ->
+  t1.(period) < t2.(period) <->
+  (exists (n1 n2:nat),
+   priority_of_tid t1.(task_id) new_tset = Some n1 /\
+   priority_of_tid t2.(task_id) new_tset = Some n2 /\
+   n1 < n2).
+\end{verbatim}
+\caption{ Formal definition of Rate-monotonic }\label{fig:rm-def}
+\end{figure}
+
+\subsubsection{Matching states}
+
+\paragraph{Simulation}
+Here we plan to prove the schedulability of the swapped tasks using the `simulation' technique:
+ideally we run the two systems - with the original schedule and the swapped schedule - simultaneously,
+and if currently the two states of the systems are somehow `matched'. Then, if the original system
+executes one step without deadline misses, then we show that the swapped system also executes one step without
+deadline miss, and the two resulting states are again `matched'. If we prove this, we can reason this way:
+If the initial states of the two systems are `matched', then for the successive steps the two systems keep
+running without deadline misses and matched, unless the original system misses a deadline.
+
+Here we do not provide a concrete such `match\_state' predicate, but we clarify that at least it should
+imply the absence of deadline misses. In the code below, \texttt{match\_state\_int} is not yet defined and
+remained as a hole (\texttt{Parameter} in the Coq's syntax).
+
+\begin{figure}[H]
+\begin{verbatim}
+Parameter match_state_int :
+  state -> state -> Prop.
+
+Definition match_state (st1 st2:state): Prop :=
+  match_state_int st1 st2 /\
+   st1.(fail_list) = [] /\ st2.(fail_list) = [].
+\end{verbatim}
+\caption{ `match-state' with a hole }\label{fig:match-state}
+\end{figure}
+
+\subsubsection{Proof of one-step}
+
+Actually we have to prove the simulation for one-step case. However, it requires a concrete
+definition of \texttt{match\_state} relation, so we leave this as a hole.
+
+\begin{figure}[H]
+\begin{verbatim}
+Lemma swap_execute_one:
+      forall (sti1 sti2 stf1:state),
+        match_state sti1 sti2 ->
+        execute_one sti1 = stf1 ->
+        exists stf2, execute_one sti2 = stf2 /\
+                match_state stf1 stf2.
+Proof.
+Admitted.
+\end{verbatim}
+\caption{ one-step proof as a hole }\label{fig:one-step-proof}
+\end{figure}
+
+\subsubsection{Proof of n-step}
+
+However, if we believe the one-step simulation, we can prove the n-step simulation. The below is
+the proposition of n-step simulation proved without a hole.
+
+\begin{figure}[H]
+\begin{verbatim}
+Lemma swap_execute_n:
+  forall (n:nat) (sti1 sti2 stf1:state),
+    match_state sti1 sti2 ->
+    execute_n sti1 n = stf1 ->
+    exists stf2, execute_n sti2 n = stf2 /\
+            match_state stf1 stf2.
+\end{verbatim}
+\caption{ n-step proof without a hole }\label{fig:n-step-proof}
+\end{figure}
+
+\subsubsection{Schedulability of Swapped Tasks}
+Then we can also prove the schedulability of swapped tasks.
+
+\begin{figure}[H]
+\begin{verbatim}
+Lemma swap_schedulable:
+  forall (tset:taskset) (pr:priority_assigner),
+    valid_tset tset ->
+    valid_priority_assigner pr ->
+    schedulable pr tset ->
+    schedulable (swap_priority_assigner pr) tset.
+\end{verbatim}
+\caption{ Schedulability proof of swapped tasks }\label{fig:swap-proof}
+\end{figure}
+
+\subsubsection{Schedulability of n-times-swapped Tasks}
+Then it's easy to prove that the tasks swapped multiple times are schedulable if the original tasks were schedulable.
+
+\begin{figure}[H]
+\begin{verbatim}
+Lemma swap_n_schedulable:
+  forall (tasks:taskset) (pr:priority_assigner),
+    valid_tset tasks ->
+    valid_priority_assigner pr ->
+    schedulable pr tasks ->
+    forall (n:nat), schedulable
+       (ntimes swap_priority_assigner n pr) tasks.
+\end{verbatim}
+\caption{ Schedulability proof of n-times-swapped tasks }\label{fig:n-swap-proof}
+\end{figure}
+
+\subsubsection{Swapping becomes RM}
+If we swap multiple times, the priority assignment will eventually be the RM scheduling. Currently we
+leave it as a hole, we believe that this is provable without huge obstacles.
+
+\begin{figure}[H]
+\begin{verbatim}
+Lemma swap_eventually_rm:
+  forall (tset:taskset) (pr:priority_assigner),
+  exists (n:nat), rate_monotonic
+    (ntimes swap_priority_assigner n pr) tset.
+Proof.
+Admitted.
+\end{verbatim}
+\caption{ Swapping eventually becomes RM, as a hole }\label{fig:swap-rm}
+\end{figure}
+
+\subsubsection{Optimality of RM}
+If we blindly believe the holes, we can now prove the optimality of RM with very light effort.
+The Theorem looks like this:
+
+\begin{figure}[H]
+\begin{verbatim}
+Theorem rm_is_optimal:
+  forall (tset:taskset),
+  forall (pr:priority_assigner),
+    valid_tset tset ->
+    valid_priority_assigner pr ->
+    schedulable pr tset ->
+    exists (rm_pr:priority_assigner),
+      rate_monotonic rm_pr tset /\
+      schedulable rm_pr tset.
+\end{verbatim}
+\caption{ Optimality of RM }\label{fig:rm-opt}
+\end{figure}
+
+
+\section{Conclusion}
+
+In this paper, we present the formal model of the fixed-priority real-time systems. We define the task model
+and the execution process in a formal way, and we also provide some useful library of proofs. We also show
+a possible way to use this for more complex purpose, such as proving optimality of RM.
+
+Our model has several limitations. First the time is considered as discrete. This model may be successfully
+used in frame-based systems, but not general systems. Coq supports real numbers, so we hope this work can
+be extended into real-number time.
+
+One another useful application of this works is to define a formally-proved schedulability checker. We can
+formally describe the critical instant. Then we can prove that, if a task set is scheculable at the critical instant
+then it is schedulable all time. Then we may define a checker that is formally verified: the checker's result
+is mathematically proved and the proof is checked by machine.
+
+% We recommend abbrvnat bibliography style.
+
+\bibliographystyle{abbrvnat}
+
+% The bibliography should be embedded for final submission.
+
+\bibliography{references}
+
+\end{document}
+
+%                       Revision History
+%                       -------- -------
+%  Date         Person  Ver.    Change
+%  ----         ------  ----    ------
+
+%  2013.06.29   TU      0.1--4  comments on permission/copyright notices
+
